@@ -9,7 +9,7 @@ use integer;
 
 use base 'Games::ABC_Path::Generator::Base';
 
-use Games::ABC_Path::Generator::Constants;
+use Games::ABC_Path::Solver::Constants;
 
 =head1 NAME
 
@@ -17,11 +17,11 @@ Games::ABC_Path::Generator::FinalLayoutObj - represents a final layout.
 
 =head1 VERSION
 
-Version 0.0.1
+Version 0.1.0
 
 =cut
 
-our $VERSION = '0.0.1';
+our $VERSION = '0.1.0';
 
 =head1 SYNOPSIS
 
@@ -173,7 +173,7 @@ sub as_string
 }
 =head1 AUTHOR
 
-Shlomi Fish, C<< <shlomif at cpan.org> >>
+Shlomi Fish, L<http://www.shlomifish.org/> .
 
 =head1 BUGS
 

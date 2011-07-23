@@ -9,7 +9,7 @@ use integer;
 
 use base 'Games::ABC_Path::Generator::Base';
 
-use Games::ABC_Path::Generator::Constants;
+use Games::ABC_Path::Solver::Constants;
 
 use Games::ABC_Path::Solver::Board '0.1.0';
 
@@ -24,11 +24,11 @@ Games::ABC_Path::Generator - a generator for ABC Path puzzle games.
 
 =head1 VERSION
 
-Version 0.0.1
+Version 0.1.0
 
 =cut
 
-our $VERSION = '0.0.1';
+our $VERSION = '0.1.0';
 
 
 =head1 SYNOPSIS
@@ -39,6 +39,19 @@ our $VERSION = '0.0.1';
 
     # Returns a Games::ABC_Path::Generator::RiddleObj object.
     my $riddle = $gen->calc_riddle();
+
+=head1 DESCRIPTION
+
+ABC Path puzzle games are puzzle games where one is given a 5*5 grid which
+should contain a consecutive path of the letters from 'A' to 'Y' (with vertical,
+horizontal, diagonal, or anti-diagonal steps). The position of the letter 'A' 
+is given, and two letters are given for each of the columns, rows, main 
+diagonal and main anti-diagonal, which can appear anywhere there.
+
+ABC Path can be played online at L<http://www.brainbashers.com/abcpath.asp> .
+
+This package is a generator for ABC Path games, and it generates a different
+layout with different clues for every random number generator seed.
 
 =head1 SUBROUTINES/METHODS
 
@@ -61,19 +74,10 @@ sub _init
 }
 
 
-sub _fisher_yates_shuffle {
+sub _shuffle {
     my ($self, $deck) = @_;
-    return unless @$deck; # must not be empty!
 
-    my $r = $self->{'rand'};
-
-    my $i = @$deck;
-    while (--$i) {
-        my $j = $r->max_rand($i+1);
-        @$deck[$i,$j] = @$deck[$j,$i];
-    }
-
-    return;
+    return $self->{'rand'}->shuffle($deck);
 }
 
 {
@@ -84,7 +88,7 @@ my @get_next_cells_lookup =
         [ map {
             my ($y,$x) = ($sy+$_->[$Y], $sx+$_->[$X]);
             (
-                (($x >= 0) && ($x < $LEN) && ($y >= 0) && ($y < $LEN))
+                (__PACKAGE__->_x_in_range($x) && __PACKAGE__->_y_in_range($y))
                 ? (__PACKAGE__->_xy_to_int([$y,$x])) : ()
             )
             }
@@ -109,10 +113,8 @@ sub _add_next_state
     my ($self, $stack, $l, $cell_int) = @_;
 
     vec($l, $cell_int, 8) = 1+@$stack;
-    my $cells = $self->_get_next_cells($l, $cell_int);
-    $self->_fisher_yates_shuffle($cells);
 
-    push @$stack, [$l, $cells];
+    push @$stack, [$l, $self->_shuffle($self->_get_next_cells($l, $cell_int))];
 
     return;
 }
@@ -200,6 +202,29 @@ Calculates the riddle (final state + initial hints) and returns it as an object.
 
 =cut
 
+sub _gen_clue_positions {
+    my ($self, $cb) = @_;
+    return [map { $cb->($_) } $self->_x_indexes()];
+};
+
+sub _calc_clue_positions {
+    my $self = shift;
+    return
+    [
+        map {
+        [map { $self->_xy_to_int($_) } @{$self->_gen_clue_positions($_)}]
+        }
+        (
+            sub { [$_,$_];   },
+            sub { [$_,4-$_]; },
+            (map { my $y = $_; sub { [$y,$_] }; } $self->_y_indexes()),
+            (map { my $x = $_; sub { [$_,$x] }; } $self->_x_indexes()),
+        )
+    ]
+}
+
+my @_clues_positions = @{__PACKAGE__->_calc_clue_positions()};
+
 sub calc_riddle
 {
     my ($self) = @_;
@@ -261,8 +286,11 @@ sub calc_riddle
                 # Yay! We found a configuration.
                 my $handle_clue = sub {
                     my @cells = @{shift->{cells}};
-                    $self->_fisher_yates_shuffle(\@cells);
-                    return [map { $layout->get_cell_contents($_) } @cells];
+                    return
+                    [
+                        map { $layout->get_cell_contents($_) } 
+                        @{$self->_shuffle(\@cells)}
+                    ];
                 };
                 my $riddle =
                 Games::ABC_Path::Generator::RiddleObj->new(
@@ -310,17 +338,7 @@ sub calc_riddle
             my @positions =
             (
                 grep { !vec($last_state->{pos_taken}, $_, 1) } 
-                (
-                    map { $self->_xy_to_int($_) }
-                    (($clue_idx == 0)
-                        ? (map { [$_,$_] } (0 .. $LEN-1))
-                        : ($clue_idx == 1)
-                        ? (map { [$_,4-$_] } ( 0 .. $LEN-1))
-                        : ($clue_idx < (2+5))
-                        ? (map { [$clue_idx-2,$_] } (0 .. $LEN-1))
-                        : (map { [$_, $clue_idx-(2+5)] } (0 .. $LEN-1))
-                    )
-                )
+                @{$_clues_positions[$clue_idx]}
             );
 
             my @pairs;
@@ -333,9 +351,7 @@ sub calc_riddle
                 }
             }
 
-            $self->_fisher_yates_shuffle(\@pairs);
-
-            $last_state->{pos_pairs} = \@pairs;
+            $last_state->{pos_pairs} = $self->_shuffle(\@pairs);
         }
 
         my $chosen_clue = $last_state->{chosen_clue};
@@ -362,7 +378,7 @@ sub calc_riddle
 
 =head1 AUTHOR
 
-Shlomi Fish, C<< <shlomif at cpan.org> >>
+Shlomi Fish, L<http://www.shlomifish.org/> .
 
 =head1 BUGS
 
@@ -378,7 +394,6 @@ automatically be notified of progress on your bug as I make changes.
 You can find documentation for this module with the perldoc command.
 
     perldoc Games::ABC_Path::Generator
-
 
 You can also look for information at:
 
@@ -402,9 +417,26 @@ L<http://search.cpan.org/dist/Games-ABC_Path-Generator/>
 
 =back
 
+=head1 SEE ALSO
+
+L<Games::ABC_Path::Solver> - a solver for ABC Path games which this
+generator uses.
+
+L<http://www.shlomifish.org/open-source/projects/japanese-puzzle-games/abc-path/> - the homepage of Shlomi Fish's ABC Path work.
+
+L<http://www.brainbashers.com/abcpath.asp> - play ABC Path online on
+brainbashers.com .
+
+L<http://www.janko.at/> - Otto Janko, the creator of ABC Path.
 
 =head1 ACKNOWLEDGEMENTS
 
+Otto Janko (L<http://www.janko.at/>) for creating ABC Path.
+
+L<http://www.brainbashers.com/> for introducing them to me.
+
+Altreus ( L<http://search.cpan.org/~altreus/> ) for suggesting an improvement
+to the documentation.
 
 =head1 LICENSE AND COPYRIGHT
 

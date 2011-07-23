@@ -7,7 +7,8 @@ build_requires:
   Test::More: 0
 configure_requires:
   Module::Build: 0.36
-generated_by: 'Module::Build version 0.3617'
+dynamic_config: 1
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.110440'
 keywords:
   - abc
   - game
@@ -30,31 +31,32 @@ name: Games-ABC_Path-Generator
 provides:
   Games::ABC_Path::Generator:
     file: lib/Games/ABC_Path/Generator.pm
-    version: v0.0.1
+    version: v0.1.0
   Games::ABC_Path::Generator::App:
     file: lib/Games/ABC_Path/Generator/App.pm
-    version: v0.0.1
+    version: v0.1.0
   Games::ABC_Path::Generator::Base:
     file: lib/Games/ABC_Path/Generator/Base.pm
-    version: v0.0.1
+    version: v0.1.0
   Games::ABC_Path::Generator::Constants:
     file: lib/Games/ABC_Path/Generator/Constants.pm
-    version: v0.0.1
+    version: v0.1.0
   Games::ABC_Path::Generator::FinalLayoutObj:
     file: lib/Games/ABC_Path/Generator/FinalLayoutObj.pm
-    version: v0.0.1
+    version: v0.1.0
   Games::ABC_Path::Generator::RiddleObj:
     file: lib/Games/ABC_Path/Generator/RiddleObj.pm
-    version: v0.0.1
+    version: v0.1.0
   Games::ABC_Path::MicrosoftRand:
     file: lib/Games/ABC_Path/MicrosoftRand.pm
-    version: v0.0.1
+    version: v0.1.0
 requires:
   Carp: 0
   Class::XSAccessor: 0
   Exporter: 0
-  Games::ABC_Path::Solver::Base: 0
-  Games::ABC_Path::Solver::Board: 0.001000
+  Games::ABC_Path::Solver::Base: 0.002000
+  Games::ABC_Path::Solver::Board: 0.002000
+  Games::ABC_Path::Solver::Constants: 0.002000
   Getopt::Long: 2.36
   integer: 0
   perl: 5.006
@@ -64,4 +66,4 @@ resources:
   homepage: http://www.shlomifish.org/open-source/projects/japanese-puzzle-games/abc-path/
   license: http://opensource.org/licenses/mit-license.php
   repository: http://svn.berlios.de/svnroot/repos/fc-solve/abc-path/
-version: v0.0.1
+version: v0.1.0
