@@ -17,6 +17,7 @@ use Games::ABC_Path::MicrosoftRand;
 
 use Games::ABC_Path::Generator::RiddleObj;
 use Games::ABC_Path::Generator::FinalLayoutObj;
+use Games::ABC_Path::Generator::Coord;
 
 =head1 NAME
 
@@ -24,11 +25,11 @@ Games::ABC_Path::Generator - a generator for ABC Path puzzle games.
 
 =head1 VERSION
 
-Version 0.1.0
+Version 0.1.1
 
 =cut
 
-our $VERSION = '0.1.0';
+our $VERSION = '0.1.1';
 
 
 =head1 SYNOPSIS
@@ -44,8 +45,8 @@ our $VERSION = '0.1.0';
 
 ABC Path puzzle games are puzzle games where one is given a 5*5 grid which
 should contain a consecutive path of the letters from 'A' to 'Y' (with vertical,
-horizontal, diagonal, or anti-diagonal steps). The position of the letter 'A' 
-is given, and two letters are given for each of the columns, rows, main 
+horizontal, diagonal, or anti-diagonal steps). The position of the letter 'A'
+is given, and two letters are given for each of the columns, rows, main
 diagonal and main anti-diagonal, which can appear anywhere there.
 
 ABC Path can be played online at L<http://www.brainbashers.com/abcpath.asp> .
@@ -55,7 +56,7 @@ layout with different clues for every random number generator seed.
 
 =head1 SUBROUTINES/METHODS
 
-=head2 my $gen = Games::ABC_Path::Generator->new({seed => $seed}); 
+=head2 my $gen = Games::ABC_Path::Generator->new({seed => $seed});
 
 Initialised a new generator with the random number generator seed $seed .
 
@@ -84,9 +85,9 @@ sub _shuffle {
 my @get_next_cells_lookup =
 (
     map {
-        my ($sy, $sx) = __PACKAGE__->_to_xy($_);
+        my $start = Games::ABC_Path::Generator::Coord->_from_int($_);
         [ map {
-            my ($y,$x) = ($sy+$_->[$Y], $sx+$_->[$X]);
+            my ($y,$x) = ($start->y() + $_->[$Y], $start->x() + $_->[$X]);
             (
                 (__PACKAGE__->_x_in_range($x) && __PACKAGE__->_y_in_range($y))
                 ? (__PACKAGE__->_xy_to_int([$y,$x])) : ()
@@ -131,8 +132,8 @@ sub _get_num_connected
         my $int = pop(@connectivity_stack);
         if (!$connected{$int}++)
         {
-            push @connectivity_stack, 
-            (grep { !exists($connected{$_}) } 
+            push @connectivity_stack,
+            (grep { !exists($connected{$_}) }
                 @{ $self->_get_next_cells($l, $int) }
             );
         }
@@ -140,8 +141,6 @@ sub _get_num_connected
 
     return scalar keys %connected;
 }
-
-use List::Util qw(first);
 
 =head2 $gen->calc_final_layout()
 
@@ -180,7 +179,7 @@ sub calc_final_layout
 
         if ( ( ! defined($next_idx) )
                 or
-            ($self->_get_num_connected($l) != 
+            ($self->_get_num_connected($l) !=
                 ($BOARD_SIZE - scalar(@dfs_stack))
             )
         )
@@ -233,9 +232,9 @@ sub calc_riddle
 
     my $A_pos = $layout->get_A_pos;
 
-    my %init_state = (pos_taken => '', 
+    my %init_state = (pos_taken => '',
         clues =>
-        [ 
+        [
             map { +{ num_remaining => 5, } }
             (1 .. $NUM_CLUES),
         ]
@@ -243,15 +242,16 @@ sub calc_riddle
 
     my $mark = sub {
         my ($state, $pos) = @_;
-        
+
         vec($state->{pos_taken}, $pos, 1) = 1;
-        
-        my ($y,$x) = $self->_to_xy($pos);
+
+        my $coord = Games::ABC_Path::Generator::Coord->_from_int($pos);
+
         foreach my $clue (
-            (($y == $x) ? 0 : ()),
-            (($y == (5-1)-$x) ? 1 : ()),
-            (2+$y),
-            ((2+5)+$x),
+            (($coord->y == $coord->x) ? 0 : ()),
+            (($coord->y == (5-1)-$coord->x) ? 1 : ()),
+            (2+$coord->y),
+            ((2+5)+$coord->x),
         )
         {
             $state->{clues}->[$clue]->{num_remaining}--;
@@ -288,7 +288,7 @@ sub calc_riddle
                     my @cells = @{shift->{cells}};
                     return
                     [
-                        map { $layout->get_cell_contents($_) } 
+                        map { $layout->get_cell_contents($_) }
                         @{$self->_shuffle(\@cells)}
                     ];
                 };
@@ -300,17 +300,17 @@ sub calc_riddle
                         [
                             map { $handle_clue->($_) } @{$last_state->{clues}}
                         ],
-                        A_pos => [$self->_to_xy($A_pos)],
+                        A_pos => Games::ABC_Path::Generator::Coord->_from_int($A_pos),
                     }
                 );
-                
+
                 my $riddle_string = $riddle->get_riddle_v1_string();
 
-                my $solver = 
+                my $solver =
                     Games::ABC_Path::Solver::Board->input_from_v1_string(
                         $riddle_string
                     );
-                
+
                 $solver->solve();
 
                 if (@{$solver->get_successes_text_tables()} != 1)
@@ -324,6 +324,7 @@ sub calc_riddle
                     return $riddle;
                 }
             }
+
             # Not enough for the clues there.
             if ($clues[0][1]->{num_remaining} < 2)
             {
@@ -337,7 +338,7 @@ sub calc_riddle
 
             my @positions =
             (
-                grep { !vec($last_state->{pos_taken}, $_, 1) } 
+                grep { !vec($last_state->{pos_taken}, $_, 1) }
                 @{$_clues_positions[$clue_idx]}
             );
 

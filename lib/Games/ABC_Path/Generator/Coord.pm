@@ -1,39 +1,39 @@
-package Games::ABC_Path::Generator::Constants;
+package Games::ABC_Path::Generator::Coord;
+
+use 5.006;
 
 use strict;
 use warnings;
 
+use integer;
+
+use base 'Games::ABC_Path::Solver::Coord';
+
+use Games::ABC_Path::Solver::Constants;
 =head1 NAME
 
-Games::ABC_Path::Generator::Constants - constants in use by the generator.
-B<FOR INTERNAL USE!>.
-
-=cut
-
-our $VERSION = '0.1.0';
+Games::ABC_Path::Generator::Coord - a coordinate class.
 
 =head1 VERSION
 
-Version 0.1.0
+Version 0.1.1
 
 =cut
 
+our $VERSION = '0.1.1';
 
-use base 'Exporter';
+sub _from_int
+{
+    my ($class, $int) = @_;
+    return $class->new({ y => ($int / $LEN), x => ($int % $LEN) });
+}
 
-our $LEN = 5;
-our $BOARD_SIZE = $LEN * $LEN;
-our $Y = 0;
-our $X = 1;
-our @letters = ('A' .. 'Y');
-our $NUM_CLUES = (2+$LEN+$LEN);
+=head1 SYNOPSIS
 
-our @EXPORT =
-(
-    qw($X $Y $NUM_CLUES @letters $LEN $BOARD_SIZE)
-);
+B<For internal use.>.
 
-1;
+=cut
+
 =head1 AUTHOR
 
 Shlomi Fish, L<http://www.shlomifish.org/> .
@@ -51,7 +51,8 @@ automatically be notified of progress on your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Games::ABC_Path::Generator::Constants
+    perldoc Games::ABC_Path::Generator
+
 
 You can also look for information at:
 
@@ -74,7 +75,6 @@ L<http://cpanratings.perl.org/d/Games-ABC_Path-Generator>
 L<http://search.cpan.org/dist/Games-ABC_Path-Generator/>
 
 =back
-
 
 =head1 ACKNOWLEDGEMENTS
 
@@ -110,4 +110,4 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 =cut
 
-1; # End of Games::ABC_Path::Generator::Constants
+1; # End of Games::ABC_Path::Generator::Coord
